@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="description" content="Web-based Augmented Reality project using A-Frame and AR.js" />
+  <title>WebAR Engineering Project</title>
+
+  <!-- Use a stable A-Frame version known to work well with AR.js marker tracking -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <!-- AR.js for A-Frame (library handles camera permission prompt) -->
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+  <style>
+    :root {
+      --ui-bg: rgba(10, 15, 25, 0.72);
+      --ui-border: rgba(255, 255, 255, 0.2);
+      --ui-text: #f4f7fb;
+      --accent: #d4af37;
+      --ok: #4ade80;
+      --warn: #f59e0b;
+      --error: #f43f5e;
+    }
+
+    html,
+    body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #1c2638 0%, #0b1020 55%, #04060d 100%);
+      font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ar-ui {
+      position: fixed;
+      left: 50%;
+      top: env(safe-area-inset-top, 12px);
+      transform: translateX(-50%);
+      z-index: 20;
+      color: var(--ui-text);
+      background: var(--ui-bg);
+      border: 1px solid var(--ui-border);
+      border-radius: 12px;
+      padding: 10px 14px;
+      width: min(92vw, 520px);
+      box-sizing: border-box;
+      backdrop-filter: blur(8px);
+      text-align: center;
+      font-size: clamp(12px, 3vw, 14px);
+      line-height: 1.35;
+    }
+
+    .loading {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ui-text);
+      background: rgba(5, 8, 16, 0.72);
+      font-size: clamp(14px, 3.5vw, 16px);
+      letter-spacing: 0.02em;
+      transition: opacity 0.35s ease;
+    }
+
+    .loading.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .status {
+      margin-top: 4px;
+      font-weight: 600;
+      color: var(--warn);
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.error {
+      color: var(--error);
+    }
+
+    .hint {
+      margin-top: 6px;
+      opacity: 0.92;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loadingOverlay">Loading camera and AR tracker...</div>
+
+  <div class="ar-ui" id="permissionPanel">
+    <div><strong>WebAR Camera Access</strong></div>
+    <div class="status" id="cameraStatus">Initializing camera...</div>
+    <div class="hint">Point your camera at a Hiro marker after permission is granted.</div>
+  </div>
+
+  <a-scene
+    embedded
+    renderer="antialias: true; alpha: true; precision: mediump; logarithmicDepthBuffer: true; colorManagement: true; shadowMap.enabled: true;"
+    vr-mode-ui="enabled: false"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+  >
+    <a-assets>
+      <a-asset-item id="fantasyInnModel" src="Fantasy Inn.glb"></a-asset-item>
+    </a-assets>
+
+    <!-- Standard Hiro marker setup for reliable detection -->
+    <a-marker preset="hiro">
+      <!--
+        Model position: x=0 centers it on the marker horizontally,
+        y=0 keeps the model grounded on the marker plane,
+        z=0 keeps depth centered over the marker.
+      -->
+      <a-entity
+        id="fantasyInn"
+        gltf-model="#fantasyInnModel"
+        position="0 0 0"
+        scale="0.5 0.5 0.5"
+        shadow="cast: true; receive: true"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 20000; easing: linear"
+      ></a-entity>
+
+      <!--
+        Torus knot can be re-enabled after box visibility is confirmed.
+      <a-entity
+        id="goldKnot"
+        geometry="primitive: torusKnot; radius: 0.28; radiusTubular: 0.07; p: 2; q: 3"
+        material="color: #d4af37; metalness: 1; roughness: 0.2; emissive: #221700; emissiveIntensity: 0.2"
+        position="0 0.5 0"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear"
+      ></a-entity>
+      -->
+
+      <!--
+        Text position: x=0 keeps the label centered over the object,
+        y=1.15 places it floating above the torus knot,
+        z=0 keeps the label aligned in depth with the marker center.
+      -->
+      <a-text
+        value="AR Engineering Project\nYour Name"
+        position="0 1.15 0"
+        rotation="-90 0 0"
+        align="center"
+        color="#ffffff"
+        width="2.2"
+        side="double"
+      ></a-text>
+
+      <!-- Receiver plane helps shadows look grounded under the model -->
+      <a-plane
+        position="0 0 -0.02"
+        rotation="-90 0 0"
+        width="2"
+        height="2"
+        material="color: #111111; opacity: 0.15; transparent: true"
+        shadow="receive: true"
+      ></a-plane>
+
+      <!-- Lighting for more realistic shading and depth -->
+      <a-entity light="type: ambient; intensity: 0.5; color: #ffffff"></a-entity>
+      <a-entity light="type: directional; intensity: 1; color: #fff7d4; castShadow: true" position="1 2 1"></a-entity>
+    </a-marker>
+
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <script>
+    (function () {
+      const sceneEl = document.querySelector("a-scene");
+      const statusEl = document.getElementById("cameraStatus");
+      const panelEl = document.getElementById("permissionPanel");
+      const loadingEl = document.getElementById("loadingOverlay");
+
+      function hideLoading() {
+        loadingEl.classList.add("hidden");
+        setTimeout(() => {
+          loadingEl.style.display = "none";
+        }, 360);
+      }
+
+      sceneEl.addEventListener("loaded", () => {
+        statusEl.textContent = "AR scene loaded. Allow camera if prompted.";
+      });
+
+      sceneEl.addEventListener("renderstart", () => {
+        statusEl.textContent = "Camera active. Point to Hiro marker.";
+        statusEl.classList.remove("error");
+        statusEl.classList.add("ok");
+
+        panelEl.style.transition = "opacity 400ms ease";
+        panelEl.style.opacity = "0";
+        setTimeout(() => {
+          panelEl.style.display = "none";
+        }, 420);
+
+        hideLoading();
+      });
+
+      // Fallback status update if camera init is slow on first load.
+      setTimeout(() => {
+        if (loadingEl.style.display !== "none") {
+          statusEl.textContent = "Still loading camera... keep this page open for a few seconds.";
+        }
+      }, 5000);
+    })();
+  </script>
+</body>
+</html>
